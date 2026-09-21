@@ -1,0 +1,40 @@
+# Local dev environment: Postgres only. Run the backend natively via your IDE
+# or ./mvnw spring-boot:run, and the frontend via npm run dev - both are faster
+# to iterate on outside Docker. This same Postgres config is mirrored by db in
+# the production docker-compose.yml, so config habits carry over.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: techdept-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-techdept}
+      POSTGRES_USER: ${POSTGRES_USER:-techdept}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-techdept}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-techdept} -d ${POSTGRES_DB:-techdept}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: pgAdmin for browsing the DB visually.
+  # Comment out if you're fine using a CLI client or your IDE's DB tool.
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: techdept-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: dev@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  pgdata-dev:
