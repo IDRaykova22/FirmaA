@@ -90,21 +90,12 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         :ui="{ container: 'p-6 sm:p-8' }"
       >
         <UAuthForm
-          title="Welcome back"
-          description="Sign in to your account"
           :fields="fields"
           :schema="schema"
           :loading="loading"
-          :submit="{ label: 'Sign in', size: 'lg' }"
+          :submit="{ label: 'Login', size: 'lg' }"
           @submit="onSubmit"
         >
-          <template #leading>
-            <div
-              class="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/30"
-            >
-              <UIcon name="i-lucide-lock-keyhole" class="size-6 text-primary" />
-            </div>
-          </template>
         </UAuthForm>
       </UPageCard>
     </div>
