@@ -32,5 +32,9 @@
   },
   "engines": {
     "node": "^22.18.0 || >=24.12.0"
+  },
+  "allowScripts": {
+    "vue-demi@0.14.10": true,
+    "esbuild@0.27.7": true
   }
 }
