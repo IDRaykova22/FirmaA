@@ -1,27 +1,29 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-interface UserInfoProps {
+interface User {
   name: string
   avatar?: string
   firstName: string
   lastName: string
   jobTitle: string
-  dateOfBirth: number // Unix timestamp
+  dateOfBirth: string // YYYYMMDD
   address: string
   phoneNumber: number
-  joinDate: number // Unix timestamp
+  joinDate: string // YYYYMMDD
   salary: number
 }
 
-const props = defineProps<UserInfoProps>()
+const props = defineProps<{
+  user: User
+}>()
 
-const formatDate = (timestamp: number): string =>
+const formatDate = (date: string): string =>
     new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
-    }).format(new Date(timestamp))
+      day: 'numeric',
+    }).format(new Date(date))
 
 const formatSalary = (value: number): string =>
     new Intl.NumberFormat('en-US', {
@@ -30,14 +32,14 @@ const formatSalary = (value: number): string =>
     }).format(value)
 
 const fields = computed(() => [
-  { label: 'First Name', value: props.firstName, icon: 'i-lucide-user' },
-  { label: 'Last Name', value: props.lastName, icon: 'i-lucide-user' },
-  { label: 'Job Title', value: props.jobTitle, icon: 'i-lucide-briefcase' },
-  { label: 'Date of Birth', value: formatDate(props.dateOfBirth), icon: 'i-lucide-cake' },
-  { label: 'Address', value: props.address, icon: 'i-lucide-map-pin' },
-  { label: 'Phone Number', value: String(props.phoneNumber), icon: 'i-lucide-phone' },
-  { label: 'Join Date', value: formatDate(props.joinDate), icon: 'i-lucide-calendar' },
-  { label: 'Salary', value: formatSalary(props.salary), icon: 'i-lucide-banknote' }
+  { label: 'First Name', value: props.user.firstName, icon: 'i-lucide-user' },
+  { label: 'Last Name', value: props.user.lastName, icon: 'i-lucide-user' },
+  { label: 'Job Title', value: props.user.jobTitle, icon: 'i-lucide-briefcase' },
+  { label: 'Date of Birth', value: formatDate(props.user.dateOfBirth), icon: 'i-lucide-cake' },
+  { label: 'Address', value: props.user.address, icon: 'i-lucide-map-pin' },
+  { label: 'Phone Number', value: String(props.user.phoneNumber), icon: 'i-lucide-phone' },
+  { label: 'Join Date', value: formatDate(props.user.joinDate), icon: 'i-lucide-calendar' },
+  { label: 'Salary', value: formatSalary(props.user.salary), icon: 'i-lucide-banknote' }
 ])
 </script>
 

@@ -7,38 +7,38 @@ const props = defineProps<{
   firstName: string
   lastName: string
   jobTitle: string
-  dateOfBirth: number // Unix timestamp
+  dateOfBirth: string // YYYYMMDD
   address: string
   phoneNumber: number
-  joinDate: number // Unix timestamp
+  joinDate: string // YYYYMMDD
   salary: number
 }>()
-
 </script>
 
 <template>
-  <div class="flex justify-center">
+  <main class="flex min-h-screen flex-col items-center justify-center gap-6 p-6">
     <UUser
         :name="props.name"
         :description="props.jobTitle"
         :avatar="{ src: props.avatar, alt: props.name }"
         size="3xl"
     />
-  </div>
 
-  <UserInfo
-      name="John Doe"
-      avatar="https://github.com/benjamincanac.png"
-      first-name="John"
-      last-name="Doe"
-      job-title="Software Engineer"
-      :date-of-birth="631152000000"
-      address="123 Main St, Springfield"
-      :phone-number="5551234567"
-      :join-date="1672531200000"
-      :salary="85000.5"
-  />
-
+    <UserInfo
+        :user="{
+          name: props.name,
+          avatar: props.avatar,
+          firstName: props.firstName,
+          lastName: props.lastName,
+          jobTitle: props.jobTitle,
+          dateOfBirth: props.dateOfBirth,
+          address: props.address,
+          phoneNumber: props.phoneNumber,
+          joinDate: props.joinDate,
+          salary: props.salary
+        }"
+    />
+  </main>
 </template>
 
 <style scoped>
