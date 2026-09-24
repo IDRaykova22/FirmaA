@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import * as z from 'zod'
 import { useWindowSize } from '@vueuse/core'
 import { useToast } from '@nuxt/ui/composables'
@@ -9,6 +10,7 @@ import { login } from '@/api/auth'
 
 const CELL_SIZE = 40
 
+const router = useRouter()
 const toast = useToast()
 const loading = ref(false)
 
@@ -53,6 +55,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   loading.value = true
   try {
     await login(event.data)
+    await router.replace({ name: 'dashboard' })
   } catch (error) {
     toast.add({
       title: error instanceof Error && error.message ? error.message : 'Login failed',
