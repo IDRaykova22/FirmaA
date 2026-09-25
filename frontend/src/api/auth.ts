@@ -7,7 +7,7 @@ export interface LoginCredentials {
   password: string
 }
 
-export async function login(credentials: LoginCredentials): Promise<void> {
+export async function login(credentials: LoginCredentials): Promise<string> {
   let response: Response
   try {
     response = await fetch(`${API_URL}/api/auth/login`, {
@@ -23,4 +23,8 @@ export async function login(credentials: LoginCredentials): Promise<void> {
   if (!response.ok) {
     throw new Error(response.status === 401 ? 'Invalid username or password' : 'Login failed')
   }
+
+  const token = await response.text()
+  localStorage.setItem('jwt', token)
+  return token
 }
