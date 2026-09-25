@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import * as z from 'zod'
 import { useWindowSize } from '@vueuse/core'
 import { useToast } from '@nuxt/ui/composables'
@@ -10,6 +11,7 @@ import { login } from '@/api/auth'
 
 const CELL_SIZE = 40
 
+const router = useRouter()
 const toast = useToast()
 const router = useRouter()
 const loading = ref(false)
