@@ -1,10 +1,9 @@
 package com.firmaa.techdept.repositories;
 
-import com.firmaa.techdept.TestcontainersConfiguration;
 import com.firmaa.techdept.models.Workstation;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 import java.util.List;
@@ -13,7 +12,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@Import(TestcontainersConfiguration.class)
 class WorkstationRepositoryTest {
 
     @Autowired

@@ -5,7 +5,6 @@ import * as z from 'zod'
 import { useWindowSize } from '@vueuse/core'
 import { useToast } from '@nuxt/ui/composables'
 import type { AuthFormField, FormSubmitEvent } from '@nuxt/ui'
-import { useRouter } from 'vue-router'
 import InteractiveGridPattern from '@/components/inspira/InteractiveGridPattern.vue'
 import { login } from '@/api/auth'
 
@@ -13,7 +12,6 @@ const CELL_SIZE = 40
 
 const router = useRouter()
 const toast = useToast()
-const router = useRouter()
 const loading = ref(false)
 
 // Size the grid to the viewport so it always covers the whole screen.

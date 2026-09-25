@@ -10,7 +10,9 @@ import com.firmaa.techdept.repositories.UserRepository;
 import com.firmaa.techdept.repositories.WorkstationRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import com.firmaa.techdept.security.JwtAuthenticationFilter;
+import com.firmaa.techdept.security.JwtUtils;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -31,11 +33,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(AdminController.class)
 class AdminControllerTest {
 
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private JwtUtils jwtUtils;
+
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @MockitoBean
     private UserRepository userRepository;

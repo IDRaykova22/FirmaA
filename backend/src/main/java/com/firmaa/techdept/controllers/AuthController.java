@@ -8,6 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -21,30 +24,21 @@ public class AuthController {
     @Autowired
     private JwtUtils jwtUtils;
 
-    @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User signUpRequest) {
-        if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return ResponseEntity.badRequest().body("Error: Username is already taken!");
-        }
-
-        User user = new User();
-        user.setUsername(signUpRequest.getUsername());
-        user.setPassword(encoder.encode(signUpRequest.getPassword()));
-
-        userRepository.save(user);
-        return ResponseEntity.ok("User registered successfully!");
-    }
-
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody User loginRequest) {
-        User user = userRepository.findByUsername(loginRequest.getUsername())
-                .orElseThrow(() -> new RuntimeException("Error: User not found."));
+        User user = userRepository.findByUsername(loginRequest.getUsername()).orElse(null);
 
-        if (encoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            String jwt = jwtUtils.generateJwtToken(user.getUsername());
-            return ResponseEntity.ok(jwt);
-        } else {
-            return ResponseEntity.status(401).body("Error: Invalid Credentials");
+        if (user == null || !encoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            return ResponseEntity.status(401).body("Invalid username or password");
         }
+
+        String jwt = jwtUtils.generateJwtToken(user.getUsername());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", jwt);
+        response.put("username", user.getUsername());
+        response.put("role", user.getRole().name());
+
+        return ResponseEntity.ok(response);
     }
 }

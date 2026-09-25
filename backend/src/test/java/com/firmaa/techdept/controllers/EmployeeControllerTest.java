@@ -8,7 +8,9 @@ import com.firmaa.techdept.repositories.ProjectRepository;
 import com.firmaa.techdept.repositories.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import com.firmaa.techdept.security.JwtAuthenticationFilter;
+import com.firmaa.techdept.security.JwtUtils;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -26,6 +28,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(EmployeeController.class)
 class EmployeeControllerTest {
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private JwtUtils jwtUtils;
 
     @Autowired
     private MockMvc mockMvc;
