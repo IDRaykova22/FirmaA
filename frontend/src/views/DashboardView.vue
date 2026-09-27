@@ -292,12 +292,21 @@ const workstationOptions = computed(() =>
 </script>
 
 <template>
-  <main class="min-h-dvh bg-default">
+  <!-- overflow-x-clip (not hidden) so the sticky header keeps working -->
+  <main class="relative min-h-dvh overflow-x-clip bg-default">
+    <!-- Soft green glow, same as on the login page -->
+    <div
+      aria-hidden="true"
+      class="pointer-events-none absolute top-0 left-1/2 h-[28rem] w-[56rem] max-w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/15 blur-3xl"
+    />
+
     <!-- Top navbar -->
     <header class="sticky top-0 z-50 flex items-center justify-between border-b border-default bg-default/80 px-6 py-3 backdrop-blur-lg">
+      <!-- Highlight along the bottom edge, like the login card's top edge -->
+      <div class="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-linear-to-r from-transparent via-primary/60 to-transparent" />
       <div class="flex items-center gap-3">
         <UIcon name="i-lucide-layout-dashboard" class="size-6 text-primary" />
-        <h1 class="text-lg font-bold text-highlighted">TechDept Dashboard</h1>
+        <h1 class="text-lg font-bold text-highlighted">Dashboard</h1>
         <UBadge v-if="admin" color="primary" variant="subtle" size="sm">Admin</UBadge>
       </div>
       <div class="flex items-center gap-4">
@@ -308,11 +317,11 @@ const workstationOptions = computed(() =>
       </div>
     </header>
 
-    <div v-if="loading" class="flex items-center justify-center py-32">
+    <div v-if="loading" class="relative flex items-center justify-center py-32">
       <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-primary" />
     </div>
 
-    <div v-else class="mx-auto max-w-7xl space-y-8 p-6">
+    <div v-else class="relative mx-auto max-w-7xl space-y-8 p-6">
       <!-- Welcome section -->
       <div>
         <p class="text-sm font-medium text-primary">
