@@ -10,6 +10,12 @@ import {
   createWorkstation,
   fetchProjects,
   createProject,
+  updateEmployee,
+  deleteEmployee,
+  updateWorkstation,
+  deleteWorkstation,
+  updateProject,
+  deleteProject,
   fetchMyInfo,
   markProjectDone,
 } from '@/api/dashboard'
@@ -37,9 +43,18 @@ const showCreateWorkstation = ref(false)
 const showCreateProject = ref(false)
 
 // ── Form state ──────────────────────────────────────────────────────
-const newWorker = ref({ username: '', password: '', jobTitle: '', address: '', dateOfBirth: '', salary: 0, phoneNumber: '' })
-const newWorkstation = ref({ title: '', description: '', employeeIds: [] as number[] })
-const newProject = ref({ title: '', description: '', dueDate: '', workstationIds: [] as number[] })
+const emptyWorker = () => ({ username: '', password: '', jobTitle: '', address: '', dateOfBirth: '', salary: 0 as number | string | null, phoneNumber: '' })
+const emptyWorkstation = () => ({ title: '', description: '', employeeIds: [] as number[] })
+const emptyProject = () => ({ title: '', description: '', dueDate: '', workstationIds: [] as number[] })
+
+const newWorker = ref(emptyWorker())
+const newWorkstation = ref(emptyWorkstation())
+const newProject = ref(emptyProject())
+
+// When set, the matching modal edits that record instead of creating a new one
+const editingWorkerId = ref<number | null>(null)
+const editingWorkstationId = ref<number | null>(null)
+const editingProjectId = ref<number | null>(null)
 
 async function loadAdminData() {
   try {
@@ -75,39 +90,157 @@ function logout() {
 }
 
 // ── Admin actions ───────────────────────────────────────────────────
+function openAddWorker() {
+  // Keep an unfinished draft, but don't carry over fields from an edit
+  if (editingWorkerId.value !== null) newWorker.value = emptyWorker()
+  editingWorkerId.value = null
+  showAddWorker.value = true
+}
+
+// Renaming yourself would invalidate the username inside your current JWT
+const editingSelf = computed(() =>
+  editingWorkerId.value !== null &&
+  employees.value.find((e: any) => e.id === editingWorkerId.value)?.username === username.value
+)
+
+function openEditWorker(emp: any) {
+  editingWorkerId.value = emp.id
+  newWorker.value = {
+    username: emp.username,
+    password: '',
+    jobTitle: emp.jobTitle,
+    address: emp.address,
+    dateOfBirth: emp.dateOfBirth,
+    salary: emp.salary ?? '',
+    phoneNumber: emp.phoneNumber,
+  }
+  showAddWorker.value = true
+}
+
 async function submitWorker() {
+  const editing = editingWorkerId.value !== null
   try {
-    await createEmployee(newWorker.value)
-    toast.add({ title: 'Worker created successfully!', color: 'success', icon: 'i-lucide-check' })
+    if (editing) {
+      await updateEmployee(editingWorkerId.value!, newWorker.value)
+    } else {
+      await createEmployee(newWorker.value)
+    }
+    toast.add({ title: editing ? 'Worker updated!' : 'Worker created successfully!', color: 'success', icon: 'i-lucide-check' })
     showAddWorker.value = false
-    newWorker.value = { username: '', password: '', jobTitle: '', address: '', dateOfBirth: '', salary: 0, phoneNumber: '' }
+    editingWorkerId.value = null
+    newWorker.value = emptyWorker()
     await loadAdminData()
   } catch (e: any) {
-    toast.add({ title: e.message || 'Failed to create worker', color: 'error', icon: 'i-lucide-circle-x' })
+    toast.add({ title: e.message || `Failed to ${editing ? 'update' : 'create'} worker`, color: 'error', icon: 'i-lucide-circle-x' })
   }
+}
+
+function openCreateWorkstation() {
+  if (editingWorkstationId.value !== null) newWorkstation.value = emptyWorkstation()
+  editingWorkstationId.value = null
+  showCreateWorkstation.value = true
+}
+
+function openEditWorkstation(ws: any) {
+  editingWorkstationId.value = ws.id
+  newWorkstation.value = {
+    title: ws.title,
+    description: ws.description,
+    employeeIds: ws.employees.map((e: any) => e.id),
+  }
+  showCreateWorkstation.value = true
 }
 
 async function submitWorkstation() {
+  const editing = editingWorkstationId.value !== null
   try {
-    await createWorkstation(newWorkstation.value)
-    toast.add({ title: 'Workstation created!', color: 'success', icon: 'i-lucide-check' })
+    if (editing) {
+      await updateWorkstation(editingWorkstationId.value!, newWorkstation.value)
+    } else {
+      await createWorkstation(newWorkstation.value)
+    }
+    toast.add({ title: editing ? 'Workstation updated!' : 'Workstation created!', color: 'success', icon: 'i-lucide-check' })
     showCreateWorkstation.value = false
-    newWorkstation.value = { title: '', description: '', employeeIds: [] }
+    editingWorkstationId.value = null
+    newWorkstation.value = emptyWorkstation()
     await loadAdminData()
   } catch (e: any) {
-    toast.add({ title: e.message || 'Failed to create workstation', color: 'error', icon: 'i-lucide-circle-x' })
+    toast.add({ title: e.message || `Failed to ${editing ? 'update' : 'create'} workstation`, color: 'error', icon: 'i-lucide-circle-x' })
   }
 }
 
+function openCreateProject() {
+  if (editingProjectId.value !== null) newProject.value = emptyProject()
+  editingProjectId.value = null
+  showCreateProject.value = true
+}
+
+function openEditProject(proj: any) {
+  editingProjectId.value = proj.id
+  newProject.value = {
+    title: proj.title,
+    description: proj.description,
+    dueDate: proj.dueDate,
+    workstationIds: proj.workstations.map((ws: any) => ws.id),
+  }
+  showCreateProject.value = true
+}
+
 async function submitProject() {
+  const editing = editingProjectId.value !== null
   try {
-    await createProject(newProject.value)
-    toast.add({ title: 'Project created!', color: 'success', icon: 'i-lucide-check' })
+    if (editing) {
+      await updateProject(editingProjectId.value!, newProject.value)
+    } else {
+      await createProject(newProject.value)
+    }
+    toast.add({ title: editing ? 'Project updated!' : 'Project created!', color: 'success', icon: 'i-lucide-check' })
     showCreateProject.value = false
-    newProject.value = { title: '', description: '', dueDate: '', workstationIds: [] }
+    editingProjectId.value = null
+    newProject.value = emptyProject()
     await loadAdminData()
   } catch (e: any) {
-    toast.add({ title: e.message || 'Failed to create project', color: 'error', icon: 'i-lucide-circle-x' })
+    toast.add({ title: e.message || `Failed to ${editing ? 'update' : 'create'} project`, color: 'error', icon: 'i-lucide-circle-x' })
+  }
+}
+
+// ── Delete confirmation ─────────────────────────────────────────────
+type DeleteKind = 'worker' | 'workstation' | 'project'
+const deleteTarget = ref<{ kind: DeleteKind; id: number; name: string } | null>(null)
+const deleting = ref(false)
+
+const showDeleteConfirm = computed({
+  get: () => deleteTarget.value !== null,
+  set: (open: boolean) => {
+    if (!open) deleteTarget.value = null
+  },
+})
+
+const deleteHints: Record<DeleteKind, string> = {
+  worker: 'Their project completions will also be removed.',
+  workstation: 'Its employees will be unassigned and it will be removed from its projects.',
+  project: 'All completion records for this project will be removed.',
+}
+
+function askDelete(kind: DeleteKind, id: number, name: string) {
+  deleteTarget.value = { kind, id, name }
+}
+
+async function confirmDelete() {
+  const target = deleteTarget.value
+  if (!target) return
+  deleting.value = true
+  try {
+    if (target.kind === 'worker') await deleteEmployee(target.id)
+    else if (target.kind === 'workstation') await deleteWorkstation(target.id)
+    else await deleteProject(target.id)
+    toast.add({ title: `Deleted ${target.name}`, color: 'success', icon: 'i-lucide-check' })
+    deleteTarget.value = null
+    await loadAdminData()
+  } catch (e: any) {
+    toast.add({ title: e.message || `Failed to delete ${target.kind}`, color: 'error', icon: 'i-lucide-circle-x' })
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -194,13 +327,13 @@ const workstationOptions = computed(() =>
       <template v-if="admin">
         <!-- Quick actions -->
         <div class="grid gap-4 sm:grid-cols-3">
-          <UButton block size="lg" icon="i-lucide-user-plus" color="primary" variant="soft" @click="showAddWorker = true">
+          <UButton block size="lg" icon="i-lucide-user-plus" color="primary" variant="soft" @click="openAddWorker">
             Add a Worker
           </UButton>
-          <UButton block size="lg" icon="i-lucide-monitor-plus" color="primary" variant="soft" @click="showCreateWorkstation = true">
+          <UButton block size="lg" icon="i-lucide-monitor-plus" color="primary" variant="soft" @click="openCreateWorkstation">
             Create Workstation
           </UButton>
-          <UButton block size="lg" icon="i-lucide-folder-plus" color="primary" variant="soft" @click="showCreateProject = true">
+          <UButton block size="lg" icon="i-lucide-folder-plus" color="primary" variant="soft" @click="openCreateProject">
             Create Project
           </UButton>
         </div>
@@ -231,11 +364,23 @@ const workstationOptions = computed(() =>
             <UCard v-for="emp in employees" :key="emp.id">
               <div class="flex items-center gap-3">
                 <UIcon name="i-lucide-user" class="size-5 text-primary" />
-                <div>
-                  <p class="font-medium text-highlighted">{{ emp.username }}</p>
-                  <p class="text-sm text-muted">{{ emp.jobTitle || 'No title' }}</p>
+                <div class="min-w-0">
+                  <p class="truncate font-medium text-highlighted">{{ emp.username }}</p>
+                  <p class="truncate text-sm text-muted">{{ emp.jobTitle || 'No title' }}</p>
                 </div>
-                <UBadge v-if="emp.role === 'ROLE_ADMIN'" color="primary" variant="subtle" size="xs" class="ml-auto">Admin</UBadge>
+                <div class="ml-auto flex shrink-0 items-center gap-1">
+                  <UBadge v-if="emp.role === 'ROLE_ADMIN'" color="primary" variant="subtle" size="xs">Admin</UBadge>
+                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-pencil" :aria-label="`Edit ${emp.username}`" @click="openEditWorker(emp)" />
+                  <UButton
+                    v-if="emp.username !== username"
+                    size="xs"
+                    color="error"
+                    variant="ghost"
+                    icon="i-lucide-trash-2"
+                    :aria-label="`Delete ${emp.username}`"
+                    @click="askDelete('worker', emp.id, emp.username)"
+                  />
+                </div>
               </div>
             </UCard>
           </div>
@@ -251,20 +396,30 @@ const workstationOptions = computed(() =>
             </div>
           </UPageCard>
           <div v-else class="grid gap-4 sm:grid-cols-2">
-            <UPageCard v-for="ws in workstations" :key="ws.id" :title="ws.title" icon="i-lucide-monitor">
-              <template #header-right>
-                <UButton size="xs" color="primary" variant="soft" icon="i-lucide-users" @click="openManageEmployees(ws)">
-                  Manage
-                </UButton>
-              </template>
-              <p v-if="ws.description" class="mb-3 text-sm text-muted">{{ ws.description }}</p>
-              <div class="flex flex-wrap gap-2">
-                <UBadge v-for="emp in ws.employees" :key="emp.id" color="neutral" variant="subtle">
-                  {{ emp.username }}
-                </UBadge>
-                <span v-if="ws.employees.length === 0" class="text-sm text-muted">No employees assigned</span>
+            <UCard v-for="ws in workstations" :key="ws.id">
+              <div class="space-y-3">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex min-w-0 items-center gap-2">
+                    <UIcon name="i-lucide-monitor" class="size-5 shrink-0 text-primary" />
+                    <h4 class="truncate font-semibold text-highlighted">{{ ws.title }}</h4>
+                  </div>
+                  <div class="flex shrink-0 items-center gap-1">
+                    <UButton size="xs" color="primary" variant="soft" icon="i-lucide-users" @click="openManageEmployees(ws)">
+                      Manage
+                    </UButton>
+                    <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-pencil" :aria-label="`Edit ${ws.title}`" @click="openEditWorkstation(ws)" />
+                    <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="`Delete ${ws.title}`" @click="askDelete('workstation', ws.id, ws.title)" />
+                  </div>
+                </div>
+                <p v-if="ws.description" class="text-sm text-muted">{{ ws.description }}</p>
+                <div class="flex flex-wrap gap-2">
+                  <UBadge v-for="emp in ws.employees" :key="emp.id" color="neutral" variant="subtle">
+                    {{ emp.username }}
+                  </UBadge>
+                  <span v-if="ws.employees.length === 0" class="text-sm text-muted">No employees assigned</span>
+                </div>
               </div>
-            </UPageCard>
+            </UCard>
           </div>
         </section>
 
@@ -280,12 +435,16 @@ const workstationOptions = computed(() =>
           <div v-else class="grid gap-4 sm:grid-cols-2">
             <UCard v-for="proj in projects" :key="proj.id">
               <div class="space-y-2">
-                <div class="flex items-start justify-between">
-                  <div class="flex items-center gap-2">
-                    <UIcon name="i-lucide-folder-kanban" class="size-5 text-primary" />
-                    <h4 class="font-semibold text-highlighted">{{ proj.title }}</h4>
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex min-w-0 items-center gap-2">
+                    <UIcon name="i-lucide-folder-kanban" class="size-5 shrink-0 text-primary" />
+                    <h4 class="truncate font-semibold text-highlighted">{{ proj.title }}</h4>
                   </div>
-                  <UBadge color="neutral" variant="subtle" size="xs">Due: {{ proj.dueDate }}</UBadge>
+                  <div class="flex shrink-0 items-center gap-1">
+                    <UBadge color="neutral" variant="subtle" size="xs">Due: {{ proj.dueDate }}</UBadge>
+                    <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-pencil" :aria-label="`Edit ${proj.title}`" @click="openEditProject(proj)" />
+                    <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="`Delete ${proj.title}`" @click="askDelete('project', proj.id, proj.title)" />
+                  </div>
                 </div>
                 <p v-if="proj.description" class="text-sm text-muted">{{ proj.description }}</p>
                 <div class="flex flex-wrap gap-1">
@@ -372,13 +531,13 @@ const workstationOptions = computed(() =>
     <UModal v-model:open="showAddWorker">
       <template #content>
         <div class="p-6 space-y-5">
-          <h3 class="text-lg font-bold text-highlighted">Add a Worker</h3>
+          <h3 class="text-lg font-bold text-highlighted">{{ editingWorkerId !== null ? 'Edit Worker' : 'Add a Worker' }}</h3>
           <div class="space-y-4">
-            <UFormField label="Username" required>
-              <UInput v-model="newWorker.username" placeholder="Username" icon="i-lucide-user" class="w-full" />
+            <UFormField label="Username" required :help="editingSelf ? 'You cannot rename the account you are logged in with.' : undefined">
+              <UInput v-model="newWorker.username" placeholder="Username" icon="i-lucide-user" class="w-full" :disabled="editingSelf" />
             </UFormField>
-            <UFormField label="Password" required>
-              <UInput v-model="newWorker.password" type="password" placeholder="Password" icon="i-lucide-lock" class="w-full" />
+            <UFormField label="Password" :required="editingWorkerId === null" :help="editingWorkerId !== null ? 'Leave blank to keep the current password.' : undefined">
+              <UInput v-model="newWorker.password" type="password" :placeholder="editingWorkerId !== null ? 'New password (optional)' : 'Password'" icon="i-lucide-lock" class="w-full" />
             </UFormField>
             <UFormField label="Job Title">
               <UInput v-model="newWorker.jobTitle" placeholder="e.g. Frontend Developer" icon="i-lucide-briefcase" class="w-full" />
@@ -398,7 +557,9 @@ const workstationOptions = computed(() =>
           </div>
           <div class="flex justify-end gap-3 pt-2">
             <UButton color="neutral" variant="ghost" @click="showAddWorker = false">Cancel</UButton>
-            <UButton color="primary" @click="submitWorker" :disabled="!newWorker.username || !newWorker.password">Create Worker</UButton>
+            <UButton color="primary" @click="submitWorker" :disabled="!newWorker.username || (editingWorkerId === null && !newWorker.password)">
+              {{ editingWorkerId !== null ? 'Save Changes' : 'Create Worker' }}
+            </UButton>
           </div>
         </div>
       </template>
@@ -408,7 +569,7 @@ const workstationOptions = computed(() =>
     <UModal v-model:open="showCreateWorkstation">
       <template #content>
         <div class="p-6 space-y-5">
-          <h3 class="text-lg font-bold text-highlighted">Create Workstation</h3>
+          <h3 class="text-lg font-bold text-highlighted">{{ editingWorkstationId !== null ? 'Edit Workstation' : 'Create Workstation' }}</h3>
           <div class="space-y-4">
             <UFormField label="Title" required>
               <UInput v-model="newWorkstation.title" placeholder="Workstation name" icon="i-lucide-monitor" class="w-full" />
@@ -429,7 +590,9 @@ const workstationOptions = computed(() =>
           </div>
           <div class="flex justify-end gap-3 pt-2">
             <UButton color="neutral" variant="ghost" @click="showCreateWorkstation = false">Cancel</UButton>
-            <UButton color="primary" @click="submitWorkstation" :disabled="!newWorkstation.title">Create Workstation</UButton>
+            <UButton color="primary" @click="submitWorkstation" :disabled="!newWorkstation.title">
+              {{ editingWorkstationId !== null ? 'Save Changes' : 'Create Workstation' }}
+            </UButton>
           </div>
         </div>
       </template>
@@ -439,7 +602,7 @@ const workstationOptions = computed(() =>
     <UModal v-model:open="showCreateProject">
       <template #content>
         <div class="p-6 space-y-5">
-          <h3 class="text-lg font-bold text-highlighted">Create Project</h3>
+          <h3 class="text-lg font-bold text-highlighted">{{ editingProjectId !== null ? 'Edit Project' : 'Create Project' }}</h3>
           <div class="space-y-4">
             <UFormField label="Title" required>
               <UInput v-model="newProject.title" placeholder="Project name" icon="i-lucide-folder-kanban" class="w-full" />
@@ -463,7 +626,31 @@ const workstationOptions = computed(() =>
           </div>
           <div class="flex justify-end gap-3 pt-2">
             <UButton color="neutral" variant="ghost" @click="showCreateProject = false">Cancel</UButton>
-            <UButton color="primary" @click="submitProject" :disabled="!newProject.title || !newProject.dueDate || newProject.workstationIds.length === 0">Create Project</UButton>
+            <UButton color="primary" @click="submitProject" :disabled="!newProject.title || !newProject.dueDate || newProject.workstationIds.length === 0">
+              {{ editingProjectId !== null ? 'Save Changes' : 'Create Project' }}
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Delete Confirmation Modal -->
+    <UModal v-model:open="showDeleteConfirm">
+      <template #content>
+        <div v-if="deleteTarget" class="p-6 space-y-5">
+          <div class="flex items-start gap-3">
+            <UIcon name="i-lucide-triangle-alert" class="mt-0.5 size-6 shrink-0 text-error" />
+            <div class="space-y-1">
+              <h3 class="text-lg font-bold text-highlighted">Delete {{ deleteTarget.kind }}?</h3>
+              <p class="text-sm text-muted">
+                <span class="font-medium text-highlighted">{{ deleteTarget.name }}</span> will be permanently deleted.
+                {{ deleteHints[deleteTarget.kind] }}
+              </p>
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 pt-2">
+            <UButton color="neutral" variant="ghost" @click="showDeleteConfirm = false">Cancel</UButton>
+            <UButton color="error" icon="i-lucide-trash-2" :loading="deleting" @click="confirmDelete">Delete</UButton>
           </div>
         </div>
       </template>

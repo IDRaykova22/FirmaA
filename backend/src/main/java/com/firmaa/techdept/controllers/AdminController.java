@@ -6,8 +6,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.security.Principal;
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,13 +42,18 @@ public class AdminController {
     public ResponseEntity<?> getAllEmployees() {
         List<User> users = userRepository.findAll();
         // Return a safe projection (no passwords)
-        var result = users.stream().map(u -> Map.of(
-                "id", u.getId(),
-                "username", u.getUsername(),
-                "role", u.getRole().name(),
-                "jobTitle", u.getJobTitle() != null ? u.getJobTitle() : "",
-                "phoneNumber", u.getPhoneNumber() != null ? u.getPhoneNumber() : ""
-        )).collect(Collectors.toList());
+        var result = users.stream().map(u -> {
+            Map<String, Object> dto = new LinkedHashMap<>();
+            dto.put("id", u.getId());
+            dto.put("username", u.getUsername());
+            dto.put("role", u.getRole().name());
+            dto.put("jobTitle", u.getJobTitle() != null ? u.getJobTitle() : "");
+            dto.put("phoneNumber", u.getPhoneNumber() != null ? u.getPhoneNumber() : "");
+            dto.put("address", u.getAddress() != null ? u.getAddress() : "");
+            dto.put("dateOfBirth", u.getDateOfBirth() != null ? u.getDateOfBirth().toString() : "");
+            dto.put("salary", u.getSalary());
+            return dto;
+        }).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
 
@@ -60,19 +70,80 @@ public class AdminController {
         employee.setUsername(username);
         employee.setPassword(encoder.encode(password));
         employee.setRole(Role.ROLE_USER);
+        applyEmployeeDetails(employee, body);
+
+        userRepository.save(employee);
+        return ResponseEntity.ok("Работникът е създаден успешно!");
+    }
+
+    @PutMapping("/employees/{id}")
+    public ResponseEntity<?> updateEmployee(@PathVariable Long id, @RequestBody Map<String, Object> body, Principal principal) {
+        User employee = userRepository.findById(id).orElse(null);
+        if (employee == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String username = (String) body.get("username");
+        if (isBlank(username)) {
+            return ResponseEntity.badRequest().body("Грешка: Потребителското име е задължително!");
+        }
+        boolean renaming = !username.equals(employee.getUsername());
+        // The JWT carries the username, so renaming yourself would end your own session
+        if (renaming && principal != null && employee.getUsername().equals(principal.getName())) {
+            return ResponseEntity.badRequest().body("Грешка: Не можете да смените собственото си потребителско име!");
+        }
+        if (renaming && userRepository.existsByUsername(username)) {
+            return ResponseEntity.badRequest().body("Грешка: Потребителското име е заето!");
+        }
+        employee.setUsername(username);
+
+        // Password is optional on edit: a blank value keeps the current one
+        String password = (String) body.get("password");
+        if (!isBlank(password)) {
+            employee.setPassword(encoder.encode(password));
+        }
+
+        applyEmployeeDetails(employee, body);
+
+        userRepository.save(employee);
+        return ResponseEntity.ok("Работникът е обновен успешно!");
+    }
+
+    @DeleteMapping("/employees/{id}")
+    @Transactional
+    public ResponseEntity<?> deleteEmployee(@PathVariable Long id, Principal principal) {
+        User employee = userRepository.findById(id).orElse(null);
+        if (employee == null) {
+            return ResponseEntity.notFound().build();
+        }
+        if (principal != null && employee.getUsername().equals(principal.getName())) {
+            return ResponseEntity.badRequest().body("Грешка: Не можете да изтриете собствения си акаунт!");
+        }
+
+        // Drop the employee's project completions before removing the user
+        for (Project project : projectRepository.findByCompletedBy_Id(id)) {
+            project.getCompletedBy().removeIf(u -> u.getId().equals(id));
+            projectRepository.save(project);
+        }
+
+        userRepository.delete(employee);
+        return ResponseEntity.ok("Работникът е изтрит успешно!");
+    }
+
+    private void applyEmployeeDetails(User employee, Map<String, Object> body) {
         employee.setJobTitle((String) body.get("jobTitle"));
         employee.setAddress((String) body.get("address"));
         employee.setPhoneNumber((String) body.get("phoneNumber"));
 
-        if (body.get("dateOfBirth") != null) {
-            employee.setDateOfBirth(java.time.LocalDate.parse((String) body.get("dateOfBirth")));
-        }
-        if (body.get("salary") != null) {
-            employee.setSalary(new java.math.BigDecimal(body.get("salary").toString()));
-        }
+        Object dateOfBirth = body.get("dateOfBirth");
+        employee.setDateOfBirth(isBlank(dateOfBirth) ? null : LocalDate.parse(dateOfBirth.toString()));
 
-        userRepository.save(employee);
-        return ResponseEntity.ok("Работникът е създаден успешно!");
+        Object salary = body.get("salary");
+        employee.setSalary(isBlank(salary) ? null : new BigDecimal(salary.toString()));
+    }
+
+    private static boolean isBlank(Object value) {
+        return value == null || value.toString().isBlank();
     }
 
     // ── Workstations ────────────────────────────────────────────────────
@@ -103,17 +174,9 @@ public class AdminController {
         Workstation savedWs = workstationRepository.save(ws);
 
         // Assign employees to this workstation
-        if (body.get("employeeIds") != null) {
-            @SuppressWarnings("unchecked")
-            List<Number> ids = (List<Number>) body.get("employeeIds");
-            for (Number id : ids) {
-                User dbUser = userRepository.findById(id.longValue()).orElse(null);
-                if (dbUser != null) {
-                    dbUser.setWorkstation(savedWs);
-                    userRepository.save(dbUser);
-                }
-            }
-        }
+        @SuppressWarnings("unchecked")
+        List<Number> ids = (List<Number>) body.get("employeeIds");
+        assignEmployees(savedWs, ids);
         return ResponseEntity.ok("Работното място е създадено успешно!");
     }
 
@@ -124,26 +187,91 @@ public class AdminController {
             return ResponseEntity.notFound().build();
         }
 
-        // Remove current employees from this workstation
+        @SuppressWarnings("unchecked")
+        List<Number> ids = (List<Number>) body.get("employeeIds");
+        unassignEmployees(ws);
+        assignEmployees(ws, ids);
+
+        return ResponseEntity.ok("Работниците са обновени успешно!");
+    }
+
+    @PutMapping("/workstations/{id}")
+    @Transactional
+    public ResponseEntity<?> updateWorkstation(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Workstation ws = workstationRepository.findById(id).orElse(null);
+        if (ws == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String title = (String) body.get("title");
+        if (isBlank(title)) {
+            return ResponseEntity.badRequest().body("Грешка: Заглавието е задължително!");
+        }
+        ws.setTitle(title);
+        ws.setDescription((String) body.get("description"));
+        workstationRepository.save(ws);
+
+        // Only touch the employee list when the client sends one
+        if (body.containsKey("employeeIds")) {
+            @SuppressWarnings("unchecked")
+            List<Number> ids = (List<Number>) body.get("employeeIds");
+            unassignEmployees(ws);
+            assignEmployees(ws, ids);
+        }
+
+        return ResponseEntity.ok("Работното място е обновено успешно!");
+    }
+
+    @DeleteMapping("/workstations/{id}")
+    @Transactional
+    public ResponseEntity<?> deleteWorkstation(@PathVariable Long id) {
+        Workstation ws = workstationRepository.findById(id).orElse(null);
+        if (ws == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        List<Project> projects = projectRepository.findByWorkstations_Id(id);
+
+        // A project must keep at least one workstation, so refuse if this is the last one
+        List<String> blocking = projects.stream()
+                .filter(p -> p.getWorkstations().size() <= 1)
+                .map(Project::getTitle)
+                .collect(Collectors.toList());
+        if (!blocking.isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                    "Грешка: Работното място е единственото за проект(и): " + String.join(", ", blocking)
+                            + ". Първо редактирайте или изтрийте тези проекти.");
+        }
+
+        for (Project project : projects) {
+            project.getWorkstations().removeIf(w -> w.getId().equals(id));
+            projectRepository.save(project);
+        }
+        unassignEmployees(ws);
+
+        workstationRepository.delete(ws);
+        return ResponseEntity.ok("Работното място е изтрито успешно!");
+    }
+
+    private void unassignEmployees(Workstation ws) {
         for (User emp : ws.getEmployees()) {
             emp.setWorkstation(null);
             userRepository.save(emp);
         }
+        ws.getEmployees().clear();
+    }
 
-        // Assign new employees
-        @SuppressWarnings("unchecked")
-        List<Number> ids = (List<Number>) body.get("employeeIds");
-        if (ids != null) {
-            for (Number empId : ids) {
-                User dbUser = userRepository.findById(empId.longValue()).orElse(null);
-                if (dbUser != null) {
-                    dbUser.setWorkstation(ws);
-                    userRepository.save(dbUser);
-                }
+    private void assignEmployees(Workstation ws, List<Number> ids) {
+        if (ids == null) {
+            return;
+        }
+        for (Number empId : ids) {
+            User dbUser = userRepository.findById(empId.longValue()).orElse(null);
+            if (dbUser != null) {
+                dbUser.setWorkstation(ws);
+                userRepository.save(dbUser);
             }
         }
-
-        return ResponseEntity.ok("Работниците са обновени успешно!");
     }
 
     // ── Projects ────────────────────────────────────────────────────────
@@ -177,7 +305,7 @@ public class AdminController {
         Project project = new Project();
         project.setTitle((String) body.get("title"));
         project.setDescription((String) body.get("description"));
-        project.setDueDate(java.time.LocalDate.parse((String) body.get("dueDate")));
+        project.setDueDate(LocalDate.parse((String) body.get("dueDate")));
 
         @SuppressWarnings("unchecked")
         List<Number> wsIds = (List<Number>) body.get("workstationIds");
@@ -185,15 +313,61 @@ public class AdminController {
             return ResponseEntity.badRequest().body("Проектът трябва да има поне едно работно място!");
         }
 
+        project.setWorkstations(findWorkstations(wsIds));
+
+        projectRepository.save(project);
+        return ResponseEntity.ok("Проектът е създаден успешно!");
+    }
+
+    @PutMapping("/projects/{id}")
+    @Transactional
+    public ResponseEntity<?> updateProject(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Project project = projectRepository.findById(id).orElse(null);
+        if (project == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String title = (String) body.get("title");
+        Object dueDate = body.get("dueDate");
+        if (isBlank(title) || isBlank(dueDate)) {
+            return ResponseEntity.badRequest().body("Грешка: Заглавието и крайният срок са задължителни!");
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Number> wsIds = (List<Number>) body.get("workstationIds");
+        if (wsIds == null || wsIds.isEmpty()) {
+            return ResponseEntity.badRequest().body("Проектът трябва да има поне едно работно място!");
+        }
+
+        project.setTitle(title);
+        project.setDescription((String) body.get("description"));
+        project.setDueDate(LocalDate.parse(dueDate.toString()));
+        project.getWorkstations().clear();
+        project.getWorkstations().addAll(findWorkstations(wsIds));
+
+        projectRepository.save(project);
+        return ResponseEntity.ok("Проектът е обновен успешно!");
+    }
+
+    @DeleteMapping("/projects/{id}")
+    public ResponseEntity<?> deleteProject(@PathVariable Long id) {
+        Project project = projectRepository.findById(id).orElse(null);
+        if (project == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Project owns both join tables, so its workstation/completion rows go with it
+        projectRepository.delete(project);
+        return ResponseEntity.ok("Проектът е изтрит успешно!");
+    }
+
+    private Set<Workstation> findWorkstations(List<Number> wsIds) {
         Set<Workstation> workstations = new HashSet<>();
         for (Number id : wsIds) {
             Workstation ws = workstationRepository.findById(id.longValue()).orElse(null);
             if (ws != null) workstations.add(ws);
         }
-        project.setWorkstations(workstations);
-
-        projectRepository.save(project);
-        return ResponseEntity.ok("Проектът е създаден успешно!");
+        return workstations;
     }
 
     @GetMapping("/projects/{projectId}")
