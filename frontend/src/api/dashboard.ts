@@ -16,7 +16,7 @@ export async function createEmployee(data: {
   jobTitle: string
   address: string
   dateOfBirth: string
-  salary: number
+  salary: number | string | null
   phoneNumber: string
 }) {
   const res = await fetch(`${API_URL}/api/admin/employees`, {
@@ -27,6 +27,39 @@ export async function createEmployee(data: {
   if (!res.ok) {
     const text = await res.text()
     throw new Error(text || 'Failed to create employee')
+  }
+  return res.text()
+}
+
+export async function updateEmployee(id: number, data: {
+  username: string
+  password?: string
+  jobTitle: string
+  address: string
+  dateOfBirth: string
+  salary: number | string | null
+  phoneNumber: string
+}) {
+  const res = await fetch(`${API_URL}/api/admin/employees/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || 'Failed to update employee')
+  }
+  return res.text()
+}
+
+export async function deleteEmployee(id: number) {
+  const res = await fetch(`${API_URL}/api/admin/employees/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || 'Failed to delete employee')
   }
   return res.text()
 }
@@ -48,6 +81,35 @@ export async function createWorkstation(data: {
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error('Failed to create workstation')
+  return res.text()
+}
+
+export async function updateWorkstation(id: number, data: {
+  title: string
+  description?: string
+  employeeIds: number[]
+}) {
+  const res = await fetch(`${API_URL}/api/admin/workstations/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || 'Failed to update workstation')
+  }
+  return res.text()
+}
+
+export async function deleteWorkstation(id: number) {
+  const res = await fetch(`${API_URL}/api/admin/workstations/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || 'Failed to delete workstation')
+  }
   return res.text()
 }
 
@@ -81,6 +143,36 @@ export async function createProject(data: {
   if (!res.ok) {
     const text = await res.text()
     throw new Error(text || 'Failed to create project')
+  }
+  return res.text()
+}
+
+export async function updateProject(id: number, data: {
+  title: string
+  description?: string
+  dueDate: string
+  workstationIds: number[]
+}) {
+  const res = await fetch(`${API_URL}/api/admin/projects/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || 'Failed to update project')
+  }
+  return res.text()
+}
+
+export async function deleteProject(id: number) {
+  const res = await fetch(`${API_URL}/api/admin/projects/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || 'Failed to delete project')
   }
   return res.text()
 }
