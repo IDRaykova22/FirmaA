@@ -152,7 +152,12 @@ public class AdminController {
     private String applyEmployeeDetails(User employee, Map<String, Object> body) {
         employee.setJobTitle((String) body.get("jobTitle"));
         employee.setAddress((String) body.get("address"));
-        employee.setPhoneNumber((String) body.get("phoneNumber"));
+
+        Object phoneNumber = body.get("phoneNumber");
+        if (!isBlank(phoneNumber) && !isValidPhoneNumber(phoneNumber.toString())) {
+            return "Грешка: Невалиден телефонен номер!";
+        }
+        employee.setPhoneNumber(isBlank(phoneNumber) ? null : phoneNumber.toString());
 
         Object dateOfBirth = body.get("dateOfBirth");
         employee.setDateOfBirth(isBlank(dateOfBirth) ? null : LocalDate.parse(dateOfBirth.toString()));
@@ -179,6 +184,12 @@ public class AdminController {
         return password != null && password.length() >= 8
                 && password.matches(".*\\d.*")
                 && password.matches(".*[^A-Za-z0-9].*");
+    }
+
+    // Bulgarian mobile numbers: 10 digits (0888123456) or with the 359 country code (12 digits)
+    private static boolean isValidPhoneNumber(String phoneNumber) {
+        String digits = phoneNumber.replaceAll("\\D", "");
+        return digits.length() == 10 || (digits.length() == 12 && digits.startsWith("359"));
     }
 
     // ── Workstations ────────────────────────────────────────────────────

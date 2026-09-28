@@ -63,6 +63,12 @@ const workerErrors = computed(() => {
   if (w.salary !== '' && w.salary !== null && Number(w.salary) < MIN_SALARY) {
     errors.salary = `Cannot be below the minimum wage (${MIN_SALARY} BGN)`
   }
+  if (w.phoneNumber) {
+    const digits = w.phoneNumber.replace(/\D/g, '')
+    if (!(digits.length === 10 || (digits.length === 12 && digits.startsWith('359')))) {
+      errors.phoneNumber = 'Must be 10 digits (or +359 followed by 9 digits)'
+    }
+  }
   return errors
 })
 
@@ -575,7 +581,7 @@ const workstationOptions = computed(() =>
             <UFormField label="Salary" :error="workerErrors.salary">
               <UInput v-model.number="newWorker.salary" type="number" placeholder="0" icon="i-lucide-banknote" class="w-full" />
             </UFormField>
-            <UFormField label="Phone Number">
+            <UFormField label="Phone Number" :error="workerErrors.phoneNumber">
               <UInput v-model="newWorker.phoneNumber" placeholder="+359..." icon="i-lucide-phone" class="w-full" />
             </UFormField>
           </div>
