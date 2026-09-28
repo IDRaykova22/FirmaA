@@ -68,6 +68,9 @@ public class AdminController {
         if (userRepository.existsByUsername(username)) {
             return ResponseEntity.badRequest().body("Грешка: Потребителското име е заето!");
         }
+        if (!isStrongPassword(password)) {
+            return ResponseEntity.badRequest().body("Грешка: Паролата трябва да е поне 8 символа и да съдържа цифра и специален знак!");
+        }
 
         User employee = new User();
         employee.setUsername(username);
@@ -103,6 +106,9 @@ public class AdminController {
         // Password is optional on edit: a blank value keeps the current one
         String password = (String) body.get("password");
         if (!isBlank(password)) {
+            if (!isStrongPassword(password)) {
+                return ResponseEntity.badRequest().body("Грешка: Паролата трябва да е поне 8 символа и да съдържа цифра и специален знак!");
+            }
             employee.setPassword(encoder.encode(password));
         }
 
@@ -147,6 +153,12 @@ public class AdminController {
 
     private static boolean isBlank(Object value) {
         return value == null || value.toString().isBlank();
+    }
+
+    private static boolean isStrongPassword(String password) {
+        return password != null && password.length() >= 8
+                && password.matches(".*\\d.*")
+                && password.matches(".*[^A-Za-z0-9].*");
     }
 
     // ── Workstations ────────────────────────────────────────────────────

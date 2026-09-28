@@ -56,6 +56,9 @@ const workerErrors = computed(() => {
   const w = newWorker.value
   const errors: Record<string, string> = {}
   if (w.username && w.username.trim().length < 3) errors.username = 'At least 3 characters'
+  if (w.password && !/^(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(w.password)) {
+    errors.password = 'At least 8 characters, with a number and a special character'
+  }
   return errors
 })
 
@@ -553,7 +556,7 @@ const workstationOptions = computed(() =>
             <UFormField label="Username" required :error="workerErrors.username" :help="editingSelf ? 'You cannot rename the account you are logged in with.' : undefined">
               <UInput v-model="newWorker.username" placeholder="Username" icon="i-lucide-user" class="w-full" :disabled="editingSelf" />
             </UFormField>
-            <UFormField label="Password" :required="editingWorkerId === null" :help="editingWorkerId !== null ? 'Leave blank to keep the current password.' : undefined">
+            <UFormField label="Password" :required="editingWorkerId === null" :error="workerErrors.password" :help="editingWorkerId !== null ? 'Leave blank to keep the current password.' : undefined">
               <UInput v-model="newWorker.password" type="password" :placeholder="editingWorkerId !== null ? 'New password (optional)' : 'Password'" icon="i-lucide-lock" class="w-full" />
             </UFormField>
             <UFormField label="Job Title">
