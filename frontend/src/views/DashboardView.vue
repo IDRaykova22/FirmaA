@@ -51,6 +51,14 @@ const newWorker = ref(emptyWorker())
 const newWorkstation = ref(emptyWorkstation())
 const newProject = ref(emptyProject())
 
+// Mirrors the backend checks in AdminController so mistakes surface before submit
+const workerErrors = computed(() => {
+  const w = newWorker.value
+  const errors: Record<string, string> = {}
+  if (w.username && w.username.trim().length < 3) errors.username = 'At least 3 characters'
+  return errors
+})
+
 // When set, the matching modal edits that record instead of creating a new one
 const editingWorkerId = ref<number | null>(null)
 const editingWorkstationId = ref<number | null>(null)
@@ -542,7 +550,7 @@ const workstationOptions = computed(() =>
         <div class="p-6 space-y-5">
           <h3 class="text-lg font-bold text-highlighted">{{ editingWorkerId !== null ? 'Edit Worker' : 'Add a Worker' }}</h3>
           <div class="space-y-4">
-            <UFormField label="Username" required :help="editingSelf ? 'You cannot rename the account you are logged in with.' : undefined">
+            <UFormField label="Username" required :error="workerErrors.username" :help="editingSelf ? 'You cannot rename the account you are logged in with.' : undefined">
               <UInput v-model="newWorker.username" placeholder="Username" icon="i-lucide-user" class="w-full" :disabled="editingSelf" />
             </UFormField>
             <UFormField label="Password" :required="editingWorkerId === null" :help="editingWorkerId !== null ? 'Leave blank to keep the current password.' : undefined">
@@ -566,7 +574,7 @@ const workstationOptions = computed(() =>
           </div>
           <div class="flex justify-end gap-3 pt-2">
             <UButton color="neutral" variant="ghost" @click="showAddWorker = false">Cancel</UButton>
-            <UButton color="primary" @click="submitWorker" :disabled="!newWorker.username || (editingWorkerId === null && !newWorker.password)">
+            <UButton color="primary" @click="submitWorker" :disabled="!newWorker.username || (editingWorkerId === null && !newWorker.password) || Object.keys(workerErrors).length > 0">
               {{ editingWorkerId !== null ? 'Save Changes' : 'Create Worker' }}
             </UButton>
           </div>

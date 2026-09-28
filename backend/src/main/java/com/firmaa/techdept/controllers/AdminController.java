@@ -62,6 +62,9 @@ public class AdminController {
         String username = (String) body.get("username");
         String password = (String) body.get("password");
 
+        if (isBlank(username) || username.trim().length() < 3) {
+            return ResponseEntity.badRequest().body("Грешка: Потребителското име трябва да е поне 3 символа!");
+        }
         if (userRepository.existsByUsername(username)) {
             return ResponseEntity.badRequest().body("Грешка: Потребителското име е заето!");
         }
@@ -84,8 +87,8 @@ public class AdminController {
         }
 
         String username = (String) body.get("username");
-        if (isBlank(username)) {
-            return ResponseEntity.badRequest().body("Грешка: Потребителското име е задължително!");
+        if (isBlank(username) || username.trim().length() < 3) {
+            return ResponseEntity.badRequest().body("Грешка: Потребителското име трябва да е поне 3 символа!");
         }
         boolean renaming = !username.equals(employee.getUsername());
         // The JWT carries the username, so renaming yourself would end your own session
