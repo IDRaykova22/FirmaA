@@ -76,7 +76,10 @@ public class AdminController {
         employee.setUsername(username);
         employee.setPassword(encoder.encode(password));
         employee.setRole(Role.ROLE_USER);
-        applyEmployeeDetails(employee, body);
+        String detailsError = applyEmployeeDetails(employee, body);
+        if (detailsError != null) {
+            return ResponseEntity.badRequest().body(detailsError);
+        }
 
         userRepository.save(employee);
         return ResponseEntity.ok("Работникът е създаден успешно!");
@@ -112,7 +115,10 @@ public class AdminController {
             employee.setPassword(encoder.encode(password));
         }
 
-        applyEmployeeDetails(employee, body);
+        String detailsError = applyEmployeeDetails(employee, body);
+        if (detailsError != null) {
+            return ResponseEntity.badRequest().body(detailsError);
+        }
 
         userRepository.save(employee);
         return ResponseEntity.ok("Работникът е обновен успешно!");
@@ -139,7 +145,11 @@ public class AdminController {
         return ResponseEntity.ok("Работникът е изтрит успешно!");
     }
 
-    private void applyEmployeeDetails(User employee, Map<String, Object> body) {
+    // National minimum wage (BGN/month); update as it changes
+    private static final BigDecimal MIN_SALARY = new BigDecimal("1077");
+
+    /** Applies the non-credential employee fields. Returns an error message, or null if valid. */
+    private String applyEmployeeDetails(User employee, Map<String, Object> body) {
         employee.setJobTitle((String) body.get("jobTitle"));
         employee.setAddress((String) body.get("address"));
         employee.setPhoneNumber((String) body.get("phoneNumber"));
@@ -148,7 +158,17 @@ public class AdminController {
         employee.setDateOfBirth(isBlank(dateOfBirth) ? null : LocalDate.parse(dateOfBirth.toString()));
 
         Object salary = body.get("salary");
-        employee.setSalary(isBlank(salary) ? null : new BigDecimal(salary.toString()));
+        if (!isBlank(salary)) {
+            BigDecimal salaryValue = new BigDecimal(salary.toString());
+            if (salaryValue.compareTo(MIN_SALARY) < 0) {
+                return "Грешка: Заплатата не може да е под минималната работна заплата (" + MIN_SALARY + " лв.)!";
+            }
+            employee.setSalary(salaryValue);
+        } else {
+            employee.setSalary(null);
+        }
+
+        return null;
     }
 
     private static boolean isBlank(Object value) {

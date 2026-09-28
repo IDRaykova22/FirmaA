@@ -52,12 +52,16 @@ const newWorkstation = ref(emptyWorkstation())
 const newProject = ref(emptyProject())
 
 // Mirrors the backend checks in AdminController so mistakes surface before submit
+const MIN_SALARY = 1077 // national minimum wage (BGN/month)
 const workerErrors = computed(() => {
   const w = newWorker.value
   const errors: Record<string, string> = {}
   if (w.username && w.username.trim().length < 3) errors.username = 'At least 3 characters'
   if (w.password && !/^(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(w.password)) {
     errors.password = 'At least 8 characters, with a number and a special character'
+  }
+  if (w.salary !== '' && w.salary !== null && Number(w.salary) < MIN_SALARY) {
+    errors.salary = `Cannot be below the minimum wage (${MIN_SALARY} BGN)`
   }
   return errors
 })
@@ -568,7 +572,7 @@ const workstationOptions = computed(() =>
             <UFormField label="Date of Birth">
               <UInput v-model="newWorker.dateOfBirth" type="date" icon="i-lucide-cake" class="w-full" />
             </UFormField>
-            <UFormField label="Salary">
+            <UFormField label="Salary" :error="workerErrors.salary">
               <UInput v-model.number="newWorker.salary" type="number" placeholder="0" icon="i-lucide-banknote" class="w-full" />
             </UFormField>
             <UFormField label="Phone Number">
