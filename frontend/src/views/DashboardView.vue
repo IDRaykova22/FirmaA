@@ -69,6 +69,10 @@ const workerErrors = computed(() => {
       errors.phoneNumber = 'Must be 10 digits (or +359 followed by 9 digits)'
     }
   }
+  if (w.dateOfBirth) {
+    const age = Math.floor((Date.now() - new Date(w.dateOfBirth).getTime()) / (365.25 * 24 * 3600 * 1000))
+    if (age < 18) errors.dateOfBirth = 'Worker must be at least 18 years old'
+  }
   return errors
 })
 
@@ -575,7 +579,7 @@ const workstationOptions = computed(() =>
             <UFormField label="Address">
               <UInput v-model="newWorker.address" placeholder="Address" icon="i-lucide-map-pin" class="w-full" />
             </UFormField>
-            <UFormField label="Date of Birth">
+            <UFormField label="Date of Birth" :error="workerErrors.dateOfBirth">
               <UInput v-model="newWorker.dateOfBirth" type="date" icon="i-lucide-cake" class="w-full" />
             </UFormField>
             <UFormField label="Salary" :error="workerErrors.salary">

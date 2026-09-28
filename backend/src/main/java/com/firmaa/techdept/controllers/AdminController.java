@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -160,7 +161,15 @@ public class AdminController {
         employee.setPhoneNumber(isBlank(phoneNumber) ? null : phoneNumber.toString());
 
         Object dateOfBirth = body.get("dateOfBirth");
-        employee.setDateOfBirth(isBlank(dateOfBirth) ? null : LocalDate.parse(dateOfBirth.toString()));
+        if (!isBlank(dateOfBirth)) {
+            LocalDate dob = LocalDate.parse(dateOfBirth.toString());
+            if (Period.between(dob, LocalDate.now()).getYears() < 18) {
+                return "Грешка: Работникът трябва да е поне на 18 години!";
+            }
+            employee.setDateOfBirth(dob);
+        } else {
+            employee.setDateOfBirth(null);
+        }
 
         Object salary = body.get("salary");
         if (!isBlank(salary)) {
