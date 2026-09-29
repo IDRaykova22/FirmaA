@@ -24,9 +24,15 @@ import java.time.LocalDate;
         @Enumerated(EnumType.STRING)
         private Role role;
 
+        private String firstName;
+        private String lastName;
+
         private String jobTitle;
+        // Only used for managers (ROLE_ADMIN)
+        private String department;
         private String address;
         private LocalDate dateOfBirth;
+        // Monthly, in EUR
         private BigDecimal salary;
         private String phoneNumber;
 
@@ -37,6 +43,30 @@ import java.time.LocalDate;
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "workstation_id")
         private Workstation workstation;
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
 
     public Role getRole() {
         return role;

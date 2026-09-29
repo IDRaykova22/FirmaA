@@ -13,6 +13,10 @@ export async function fetchEmployees() {
 export async function createEmployee(data: {
   username: string
   password: string
+  firstName: string
+  lastName: string
+  role: string
+  department: string
   jobTitle: string
   address: string
   dateOfBirth: string
@@ -34,6 +38,10 @@ export async function createEmployee(data: {
 export async function updateEmployee(id: number, data: {
   username: string
   password?: string
+  firstName: string
+  lastName: string
+  role: string
+  department: string
   jobTitle: string
   address: string
   dateOfBirth: string
@@ -73,6 +81,7 @@ export async function fetchWorkstations() {
 export async function createWorkstation(data: {
   title: string
   description?: string
+  computerCount: number | string
   employeeIds: number[]
 }) {
   const res = await fetch(`${API_URL}/api/admin/workstations`, {
@@ -87,6 +96,7 @@ export async function createWorkstation(data: {
 export async function updateWorkstation(id: number, data: {
   title: string
   description?: string
+  computerCount: number | string
   employeeIds: number[]
 }) {
   const res = await fetch(`${API_URL}/api/admin/workstations/${id}`, {
@@ -133,6 +143,7 @@ export async function createProject(data: {
   title: string
   description?: string
   dueDate: string
+  projectValue: number | string | null
   workstationIds: number[]
 }) {
   const res = await fetch(`${API_URL}/api/admin/projects`, {
@@ -151,6 +162,7 @@ export async function updateProject(id: number, data: {
   title: string
   description?: string
   dueDate: string
+  projectValue: number | string | null
   workstationIds: number[]
 }) {
   const res = await fetch(`${API_URL}/api/admin/projects/${id}`, {

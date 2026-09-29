@@ -18,6 +18,8 @@ public class Workstation {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    private Integer computerCount;
+
     @OneToMany(mappedBy = "workstation")
 
     @JsonIgnore
@@ -45,6 +47,14 @@ public class Workstation {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Integer getComputerCount() {
+        return computerCount;
+    }
+
+    public void setComputerCount(Integer computerCount) {
+        this.computerCount = computerCount;
     }
 
     public List<User> getEmployees() {
