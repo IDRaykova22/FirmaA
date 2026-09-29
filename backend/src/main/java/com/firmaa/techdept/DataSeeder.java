@@ -33,7 +33,7 @@ public class DataSeeder implements CommandLineRunner {
             userRepository.save(admin);
             System.out.println(">>> Default admin account created (username: admin, password: admin)");
         }
-        
+
         if (userRepository.findByUsername("worker").isEmpty()) {
             User worker = new User();
             worker.setUsername("worker");
@@ -43,5 +43,20 @@ public class DataSeeder implements CommandLineRunner {
             userRepository.save(worker);
             System.out.println(">>> Default worker account created (username: worker, password: worker)");
         }
+
+        // Names and the manager's department were added later; fill them in on
+        // databases where these default accounts already existed without them
+        fillMissingDetails("admin", "Admin", "Adminov", "Технологично отделение");
+        fillMissingDetails("worker", "Worker", "Workerov", null);
+    }
+
+    private void fillMissingDetails(String username, String firstName, String lastName, String department) {
+        userRepository.findByUsername(username).ifPresent(user -> {
+            boolean changed = false;
+            if (user.getFirstName() == null) { user.setFirstName(firstName); changed = true; }
+            if (user.getLastName() == null) { user.setLastName(lastName); changed = true; }
+            if (department != null && user.getDepartment() == null) { user.setDepartment(department); changed = true; }
+            if (changed) userRepository.save(user);
+        });
     }
 }

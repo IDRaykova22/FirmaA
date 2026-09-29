@@ -225,6 +225,8 @@ class AdminControllerTest {
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "username", "worker",
                                 "password", "",
+                                "firstName", "Ivan",
+                                "lastName", "Petrov",
                                 "jobTitle", "Lead",
                                 "dateOfBirth", "",
                                 "salary", ""))))
@@ -371,6 +373,7 @@ class AdminControllerTest {
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "title", "New",
                                 "dueDate", "2026-12-31",
+                                "projectValue", 12500,
                                 "workstationIds", List.of(1)))))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Проектът е обновен успешно!"));

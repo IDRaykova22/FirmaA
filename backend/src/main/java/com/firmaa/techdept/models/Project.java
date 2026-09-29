@@ -1,6 +1,7 @@
 package com.firmaa.techdept.models;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
@@ -21,6 +22,10 @@ public class Project {
 
     @Column(nullable = false)
     private LocalDate dueDate;
+
+    // In EUR. "value" is a reserved word in some databases, hence the column name
+    @Column(name = "project_value", precision = 14, scale = 2)
+    private BigDecimal projectValue;
 
     @ManyToMany
     @JoinTable(
@@ -69,6 +74,14 @@ public class Project {
 
     public void setDueDate(LocalDate dueDate) {
         this.dueDate = dueDate;
+    }
+
+    public BigDecimal getProjectValue() {
+        return projectValue;
+    }
+
+    public void setProjectValue(BigDecimal projectValue) {
+        this.projectValue = projectValue;
     }
 
     public Set<Workstation> getWorkstations() {

@@ -36,7 +36,10 @@ public class EmployeeController {
         Map<String, Object> info = new LinkedHashMap<>();
         info.put("id", user.getId());
         info.put("username", user.getUsername());
+        info.put("firstName", user.getFirstName());
+        info.put("lastName", user.getLastName());
         info.put("role", user.getRole().name());
+        info.put("department", user.getDepartment());
         info.put("jobTitle", user.getJobTitle());
         info.put("address", user.getAddress());
         info.put("dateOfBirth", user.getDateOfBirth());
@@ -51,6 +54,7 @@ public class EmployeeController {
             wsInfo.put("id", ws.getId());
             wsInfo.put("title", ws.getTitle());
             wsInfo.put("description", ws.getDescription());
+            wsInfo.put("computerCount", ws.getComputerCount() != null ? ws.getComputerCount() : 0);
 
             // Find projects assigned to this workstation
             List<Project> allProjects = projectRepository.findAll();
