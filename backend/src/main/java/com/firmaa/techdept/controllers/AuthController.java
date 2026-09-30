@@ -1,44 +1,23 @@
 package com.firmaa.techdept.controllers;
 
-import com.firmaa.techdept.security.JwtUtils;
-import com.firmaa.techdept.models.User;
-import com.firmaa.techdept.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import com.firmaa.techdept.dto.LoginRequest;
+import com.firmaa.techdept.dto.LoginResponse;
+import com.firmaa.techdept.services.AuthService;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
+/** Public login endpoint; everything else in the API requires the token it returns. */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final AuthService authService;
 
-    @Autowired
-    private PasswordEncoder encoder;
-
-    @Autowired
-    private JwtUtils jwtUtils;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@RequestBody User loginRequest) {
-        User user = userRepository.findByUsername(loginRequest.getUsername()).orElse(null);
-
-        if (user == null || !encoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            return ResponseEntity.status(401).body("Invalid username or password");
-        }
-
-        String jwt = jwtUtils.generateJwtToken(user.getUsername());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", jwt);
-        response.put("username", user.getUsername());
-        response.put("role", user.getRole().name());
-
-        return ResponseEntity.ok(response);
+    public LoginResponse authenticateUser(@RequestBody LoginRequest request) {
+        return authService.login(request);
     }
 }

@@ -1,5 +1,10 @@
 package com.firmaa.techdept.controllers;
 
+import com.firmaa.techdept.repositories.WorkstationRepository;
+import com.firmaa.techdept.services.EmployeeService;
+import com.firmaa.techdept.services.ProjectService;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.firmaa.techdept.models.Project;
 import com.firmaa.techdept.models.User;
@@ -27,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(EmployeeController.class)
+@Import({EmployeeService.class, ProjectService.class})
 class EmployeeControllerTest {
 
     @MockitoBean
@@ -43,6 +49,12 @@ class EmployeeControllerTest {
 
     @MockitoBean
     private ProjectRepository projectRepository;
+
+    @MockitoBean
+    private WorkstationRepository workstationRepository;
+
+    @MockitoBean
+    private PasswordEncoder passwordEncoder;
 
     // --- GET /api/employee/dashboard ---
 

@@ -1,5 +1,9 @@
 package com.firmaa.techdept.controllers;
 
+import com.firmaa.techdept.services.EmployeeService;
+import com.firmaa.techdept.services.ProjectService;
+import com.firmaa.techdept.services.WorkstationService;
+import org.springframework.context.annotation.Import;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.firmaa.techdept.models.Project;
 import com.firmaa.techdept.models.Role;
@@ -41,6 +45,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AdminController.class)
+@Import({EmployeeService.class, WorkstationService.class, ProjectService.class})
 class AdminControllerTest {
 
     @MockitoBean
