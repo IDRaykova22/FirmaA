@@ -1,5 +1,7 @@
 package com.firmaa.techdept.controllers;
 
+import com.firmaa.techdept.services.AuthService;
+import org.springframework.context.annotation.Import;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.firmaa.techdept.models.User;
 import com.firmaa.techdept.repositories.UserRepository;
@@ -23,6 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
+@Import(AuthService.class)
 class AuthControllerTest {
 
     @Autowired
